@@ -1,0 +1,161 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-heading);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Metanova calm greens: brand-first, not generic purple/cream AI defaults */
+  --brand-ink: #1c2a24;
+  --brand-ink-soft: #3d5248;
+  --brand-muted: #6b7f74;
+  --brand-line: #d5e0d9;
+  --brand-line-strong: #b7d9c8;
+  --brand-line-hover: #a8c4b5;
+  --brand-paper: #f3f7f4;
+  --brand-accent: #1f6b4f;
+  --brand-accent-deep: #15553e;
+  --brand-accent-soft: #d8efe4;
+  --brand-success: #2f9b6a;
+  --brand-idle: #c4b08a;
+  --brand-shadow: 0 10px 30px rgba(28, 42, 36, 0.08);
+  --motion: 0.38s;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --background: var(--brand-paper);
+  --foreground: var(--brand-ink);
+  --card: #ffffff;
+  --card-foreground: var(--brand-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-ink);
+  --primary: var(--brand-accent);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-accent-soft);
+  --secondary-foreground: var(--brand-accent-deep);
+  --muted: #e8f0eb;
+  --muted-foreground: var(--brand-muted);
+  --accent: var(--brand-accent-soft);
+  --accent-foreground: var(--brand-accent-deep);
+  --destructive: #9b3b2e;
+  --border: var(--brand-line);
+  --input: var(--brand-line);
+  --ring: color-mix(in srgb, var(--brand-accent) 40%, transparent);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 1rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(1200px 500px at 10% -10%, #dff0e6 0%, transparent 55%),
+      radial-gradient(900px 420px at 100% 0%, #f3e8dc 0%, transparent 45%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  .font-heading {
+    font-family: var(--font-heading), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-optical-sizing: auto;
+  }
+}
+
+/**
+ * One-shot light-up when a gated wizard primary button becomes enabled.
+ * Soft fade, slight scale, and a brief Metanova green glow.
+ */
+@keyframes wizard-action-enable {
+  0% {
+    filter: brightness(0.94);
+    transform: scale(0.985);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-accent) 0%, transparent);
+  }
+  45% {
+    filter: brightness(1.06);
+    transform: scale(1.02);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand-accent) 28%, transparent);
+  }
+  100% {
+    filter: brightness(1);
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-accent) 0%, transparent);
+  }
+}
+
+.wizard-action-enable {
+  animation: wizard-action-enable 0.55s var(--motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion: 0.01ms;
+  }
+
+  .wizard-action-enable {
+    animation: none;
+  }
+}
