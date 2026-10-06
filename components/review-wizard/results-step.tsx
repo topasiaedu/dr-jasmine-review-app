@@ -108,14 +108,6 @@ export function ResultsStepFields({
 
   return (
     <div>
-      <h2 className="mb-2 text-[1.25rem] font-bold leading-snug">
-        Your numbers
-      </h2>
-      <p className="mb-4 text-[1rem] leading-relaxed text-[color:var(--brand-muted)]">
-        Add lab results or changes you are proud of. Skip anything you do not
-        have. We only use what you type here.
-      </p>
-
       <p className="mb-2.5 text-[0.9rem] font-semibold text-[color:var(--brand-ink-soft)]">
         Tap to add
       </p>

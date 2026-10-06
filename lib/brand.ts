@@ -9,6 +9,7 @@ export type BrandConfig = {
   clinicBrand: string;
   shortName: string;
   googleShareUrl: string;
+  facebookReviewsUrl: string;
   positioning: readonly string[];
   workshopTeaches: readonly string[];
   programNotes: readonly string[];
@@ -21,6 +22,7 @@ export const BRAND: BrandConfig = {
   clinicBrand: "Metanova Health",
   shortName: "Dr Jasmine",
   googleShareUrl: "https://share.google/SPNWFpQZpW7j8Py1D",
+  facebookReviewsUrl: "https://www.facebook.com/drjasminechiew/reviews",
 
   positioning: [
     "Doctor-led metabolic and diabetes education / care brand under Metanova Health.",
@@ -109,7 +111,7 @@ export function buildSystemPrompt(): string {
     "- Match the requested tone: casual, warm, or clear.",
     "- When the user shared Results / numbers, weave those exact figures in clearly (before to after). Do not bury or omit them.",
     "- Do not write a long testimonial-card essay. Keep it postable as a Google review.",
-    "- Weave in selected topics and personal details naturally when present.",
+    "- Weave in the personal details the user shared (before, what changed, what stood out) naturally when present.",
     "- If first name is provided, you may end with a simple sign-off using only the first name (no leading dash).",
     "- Never use em dashes, en dashes, or spaced hyphen-minus as sentence punctuation.",
   ].join("\n");

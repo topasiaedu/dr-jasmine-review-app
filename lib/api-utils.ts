@@ -18,21 +18,6 @@ export function asText(value: unknown, max: number): string {
   return value.trim().slice(0, max);
 }
 
-/**
- * Coerces an unknown value to a list of non-empty trimmed strings (max 12).
- */
-export function asStringList(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 12);
-}
-
 const MAX_RESULTS = 8;
 const FIELD_MAX = 80;
 const CUSTOM_LINE_MAX = 160;

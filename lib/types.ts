@@ -1,12 +1,5 @@
-/**
- * Writing path chosen on the first step.
- * `self` opens Google immediately (no in-app wizard).
- * `ai` runs about → results → topics → draft → post.
- */
-export type PathId = "self" | "ai";
-
-/** Wizard step identifiers. */
-export type StepId = "path" | "about" | "results" | "topics" | "draft" | "post";
+/** Wizard step identifiers for the guided AI review flow. */
+export type StepId = "questions" | "results" | "draft" | "post";
 
 /** Always warm. No tone picker in the UI. */
 export type ReviewTone = "warm";
@@ -44,30 +37,25 @@ export type ResultMetric = {
   customLine: string;
 };
 
-/** Identity / story fields collected before drafting. */
+/**
+ * Guided story answers collected before drafting.
+ * Maps to MMC-style numbered prompts in the Questions step.
+ */
 export type ExperienceFields = {
   name: string;
-  /** What they were dealing with before care (user-facing: health concern / context). */
+  /** Q1: Before the workshop, what were you dealing with? */
   struggle: string;
-  /** Optional freeform "what changed" (results often cover this). */
+  /** Q2: What changed for you? */
   change: string;
-  /** Optional extra note. */
+  /** Q3: What stood out most? (optional) */
   extra: string;
 };
 
 /** Payload sent to `/api/generate-review`. */
 export type GenerateReviewPayload = ExperienceFields & {
-  topics: string[];
   tone: ReviewTone;
   /** Structured results / numbers the user provided. */
   results: ResultMetric[];
-};
-
-/** Topic chip used for AI guidance when drafting. */
-export type ReviewCategory = {
-  id: string;
-  label: string;
-  lines: readonly [string, string];
 };
 
 /** Successful AI generation response. */
@@ -78,12 +66,4 @@ export type GenerateReviewSuccess = {
 /** API error shape. */
 export type ApiErrorBody = {
   error: string;
-};
-
-/** Health check response. */
-export type HealthResponse = {
-  ok: boolean;
-  hasKey: boolean;
-  model: string;
-  brand: string;
 };

@@ -1,5 +1,5 @@
 import { buildSystemPrompt, stripEmEnDashPunctuation } from "@/lib/brand";
-import { asResultList, asStringList, asText, isObject } from "@/lib/api-utils";
+import { asResultList, asText, isObject } from "@/lib/api-utils";
 import { formatResultLines } from "@/lib/metrics";
 import type { GenerateReviewPayload } from "@/lib/types";
 
@@ -18,7 +18,6 @@ function normalizePayload(body: unknown): GenerateReviewPayload {
     struggle: asText(input.struggle, 220),
     change: asText(input.change, 220),
     extra: asText(input.extra, 220),
-    topics: asStringList(input.topics),
     tone: "warm",
     results: asResultList(input.results),
   };
@@ -41,11 +40,10 @@ function buildUserPrompt(payload: GenerateReviewPayload): string {
     "Write one authentic Google review for Dr Jasmine Chiew (Metanova Health).",
     "",
     `Tone: ${payload.tone}`,
-    `Topics to emphasize: ${payload.topics.length ? payload.topics.join("; ") : "none selected"}`,
     `Reviewer first name: ${payload.name || "not provided"}`,
-    `What they were dealing with: ${payload.struggle || "not provided"}`,
-    `What changed (freeform): ${payload.change || "not provided"}`,
-    `Extra notes: ${payload.extra || "not provided"}`,
+    `Before the workshop / what they were dealing with: ${payload.struggle || "not provided"}`,
+    `What changed for them: ${payload.change || "not provided"}`,
+    `What stood out: ${payload.extra || "not provided"}`,
     "",
     resultsBlock,
     "",
@@ -79,14 +77,13 @@ export async function POST(request: Request): Promise<Response> {
   const hasResults = payload.results.length > 0;
 
   if (
-    !payload.topics.length &&
     !payload.struggle &&
     !payload.change &&
     !payload.extra &&
     !hasResults
   ) {
     return Response.json(
-      { error: "Need at least one topic, personal detail, or result" },
+      { error: "Need at least one personal detail or result" },
       { status: 400 }
     );
   }

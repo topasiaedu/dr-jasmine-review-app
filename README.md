@@ -11,7 +11,6 @@ Built for a thank-you / workshop page link or iframe from GoHighLevel.
 |-------|------|
 | `app/page.tsx` + `components/review-wizard/` | Guided multi-step UI (Tailwind + shadcn/ui) |
 | `app/api/generate-review/route.ts` | OpenAI proxy (key stays server-side, Node runtime) |
-| `app/api/health/route.ts` | Key / model status for the AI badge |
 | `lib/brand.ts` | Dr Jasmine / Metanova context for the model |
 
 ## Setup
