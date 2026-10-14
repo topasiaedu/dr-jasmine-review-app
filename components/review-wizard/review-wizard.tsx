@@ -37,7 +37,7 @@ import {
   DRAFT_MIN_LENGTH,
 } from "@/lib/categories";
 import { copyText } from "@/lib/copy-text";
-import { createEmptyResult, isResultFilled } from "@/lib/metrics";
+import { isResultFilled } from "@/lib/metrics";
 import { buildTemplateReview } from "@/lib/review-template";
 import { cn } from "@/lib/utils";
 import type {
@@ -54,37 +54,6 @@ const EMPTY_EXPERIENCE: ExperienceFields = {
   change: "",
   extra: "",
 };
-
-/**
- * TEST DEFAULTS. Flip to `false` (or delete this block) before shipping.
- * Prefills guided answers and sample metrics for click-through testing.
- */
-const PREFILL_FOR_TESTING = true;
-
-/** Sample answers used only when `PREFILL_FOR_TESTING` is true. */
-const TEST_EXPERIENCE: ExperienceFields = {
-  name: "Mei",
-  struggle:
-    "diabetes for years, confusing blood sugar readings, always tired and worried about long-term medication",
-  change:
-    "clearer plan, less guessing about food, more energy for family walks",
-  extra: "felt heard, explanations were clear, workshop was worth the time",
-};
-
-/**
- * Builds sample metric rows for easy click-through testing.
- */
-function buildTestResults(): ResultMetric[] {
-  const hba1c = createEmptyResult("hba1c");
-  hba1c.before = "6.5%";
-  hba1c.after = "5.3%";
-
-  const weight = createEmptyResult("weight");
-  weight.before = "75 kg";
-  weight.after = "61 kg";
-
-  return [hba1c, weight];
-}
 
 type FieldKey = keyof ExperienceFields;
 
@@ -116,12 +85,8 @@ function isSubstantialAnswer(value: string): boolean {
  */
 export function ReviewWizard() {
   const [currentStep, setCurrentStep] = useState<StepId>("questions");
-  const [experience, setExperience] = useState<ExperienceFields>(
-    PREFILL_FOR_TESTING ? TEST_EXPERIENCE : EMPTY_EXPERIENCE
-  );
-  const [results, setResults] = useState<ResultMetric[]>(() =>
-    PREFILL_FOR_TESTING ? buildTestResults() : []
-  );
+  const [experience, setExperience] = useState<ExperienceFields>(EMPTY_EXPERIENCE);
+  const [results, setResults] = useState<ResultMetric[]>([]);
   const [invalidFields, setInvalidFields] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [draft, setDraft] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
