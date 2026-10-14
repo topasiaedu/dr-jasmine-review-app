@@ -38,9 +38,9 @@ import {
 } from "@/lib/categories";
 import { copyText } from "@/lib/copy-text";
 import { createEmptyResult, isResultFilled } from "@/lib/metrics";
+import { buildTemplateReview } from "@/lib/review-template";
 import { cn } from "@/lib/utils";
 import type {
-  ApiErrorBody,
   ExperienceFields,
   GenerateReviewPayload,
   GenerateReviewSuccess,
@@ -94,16 +94,6 @@ type AnswerKey = "struggle" | "change" | "extra";
 type StatusKind = "ok" | "error" | "";
 
 /**
- * Type guard for API error JSON.
- */
-function isApiErrorBody(value: unknown): value is ApiErrorBody {
-  if (typeof value !== "object" || value === null || !("error" in value)) {
-    return false;
-  }
-  return typeof value.error === "string";
-}
-
-/**
  * Type guard for successful generate-review JSON.
  */
 function isGenerateSuccess(value: unknown): value is GenerateReviewSuccess {
@@ -122,7 +112,7 @@ function isSubstantialAnswer(value: string): boolean {
 
 /**
  * Guided multi-step Google review craft helper for Dr Jasmine / Metanova.
- * Everyone goes through the AI flow: questions → numbers → draft → post.
+ * Flow: questions → numbers → draft (AI when available, template fallback) → post.
  */
 export function ReviewWizard() {
   const [currentStep, setCurrentStep] = useState<StepId>("questions");
@@ -218,9 +208,38 @@ export function ReviewWizard() {
   }, [experience, results]);
 
   /**
-   * Calls the generate-review API and fills the draft on success.
+   * Applies a local template draft from the user's answers and numbers.
+   * Used when the generate API is unavailable or fails.
    */
-  const writeWithAi = useCallback(async (): Promise<boolean> => {
+  const applyTemplateDraft = useCallback(
+    (payload: GenerateReviewPayload): boolean => {
+      const review = buildTemplateReview(
+        {
+          name: payload.name,
+          struggle: payload.struggle,
+          change: payload.change,
+          extra: payload.extra,
+        },
+        payload.results
+      ).trim();
+
+      if (review.length === 0) {
+        return false;
+      }
+
+      setDraft(review.slice(0, DRAFT_MAX_LENGTH));
+      setResultsStatus({ message: "", kind: "" });
+      setDraftStatus({ message: "", kind: "" });
+      return true;
+    },
+    []
+  );
+
+  /**
+   * Tries the generate-review API first. On missing key, 503, or any error,
+   * builds a template draft locally so the flow is never blocked.
+   */
+  const generateDraft = useCallback(async (): Promise<boolean> => {
     if (aiBusy) {
       return false;
     }
@@ -232,6 +251,7 @@ export function ReviewWizard() {
       return false;
     }
 
+    const payload = collectPayload();
     setAiBusy(true);
     setResultsStatus({ message: "Writing your review…", kind: "" });
 
@@ -239,35 +259,42 @@ export function ReviewWizard() {
       const res = await fetch("/api/generate-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(collectPayload()),
+        body: JSON.stringify(payload),
       });
 
       const data: unknown = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        const errorMessage = isApiErrorBody(data)
-          ? data.error
-          : `Request failed (${res.status})`;
-        throw new Error(errorMessage);
+      if (res.ok && isGenerateSuccess(data) && data.review.trim()) {
+        const review = data.review.trim();
+        setDraft(review.slice(0, DRAFT_MAX_LENGTH));
+        setResultsStatus({ message: "", kind: "" });
+        setDraftStatus({ message: "", kind: "" });
+        return true;
       }
 
-      if (!isGenerateSuccess(data) || !data.review.trim()) {
-        throw new Error("AI returned an empty review");
+      if (applyTemplateDraft(payload)) {
+        return true;
       }
 
-      const review = data.review.trim();
-      setDraft(review.slice(0, DRAFT_MAX_LENGTH));
-      setResultsStatus({ message: "", kind: "" });
-      setDraftStatus({ message: "", kind: "" });
-      return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not generate review";
-      setResultsStatus({ message, kind: "error" });
+      setResultsStatus({
+        message: "Could not create a draft. Please check your answers and try again.",
+        kind: "error",
+      });
+      return false;
+    } catch {
+      if (applyTemplateDraft(payload)) {
+        return true;
+      }
+
+      setResultsStatus({
+        message: "Could not create a draft. Please check your answers and try again.",
+        kind: "error",
+      });
       return false;
     } finally {
       setAiBusy(false);
     }
-  }, [aiBusy, collectPayload, hasRequiredExperience]);
+  }, [aiBusy, applyTemplateDraft, collectPayload, hasRequiredExperience]);
 
   /**
    * Returns the previous step for the Back control.
@@ -474,7 +501,7 @@ export function ReviewWizard() {
                   goTo("questions");
                   return;
                 }
-                const ok = await writeWithAi();
+                const ok = await generateDraft();
                 if (ok) {
                   goTo("draft");
                 }

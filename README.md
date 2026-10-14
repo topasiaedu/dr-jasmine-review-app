@@ -65,11 +65,9 @@ From Tim craft wiki:
 
 ## Google review link
 
-Default share link in `lib/brand.ts`:
+Default review link in `lib/brand.ts` (`googleShareUrl`):
 
-`https://share.google/SPNWFpQZpW7j8Py1D`
-
-Swap for a Google Business “Get more reviews” deep link when you have one (`g.page/r/.../review`).
+`https://g.page/r/CUUpUm99dRhkEBM/review`
 
 ## GHL
 

@@ -21,7 +21,8 @@ export const BRAND: BrandConfig = {
   practitionerName: "Dr Jasmine Chiew",
   clinicBrand: "Metanova Health",
   shortName: "Dr Jasmine",
-  googleShareUrl: "https://share.google/SPNWFpQZpW7j8Py1D",
+  /** Google Business "Get more reviews" deep link (g.page/r/.../review). */
+  googleShareUrl: "https://g.page/r/CUUpUm99dRhkEBM/review",
   facebookReviewsUrl: "https://www.facebook.com/drjasminechiew/reviews",
 
   positioning: [
