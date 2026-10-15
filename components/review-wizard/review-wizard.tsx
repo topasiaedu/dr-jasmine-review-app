@@ -587,7 +587,6 @@ export function ReviewWizard() {
         <StepPanel stepKey="post">
           <BackButton onClick={goBack} />
           <StepHeading
-            number={4}
             title="Ready to post"
             description="Two quick steps. Copy first, then open Google to paste and submit."
           />
@@ -599,6 +598,7 @@ export function ReviewWizard() {
           <section className="mb-6" aria-label="Step 1 Copy text">
             <StepHeading
               number={1}
+              numberPrefix="Step "
               title="Copy text"
               heading="h3"
               emphasize
@@ -650,6 +650,7 @@ export function ReviewWizard() {
           <section aria-label="Step 2 Go to Google">
             <StepHeading
               number={2}
+              numberPrefix="Step "
               title="Go to Google to post"
               heading="h3"
               emphasize

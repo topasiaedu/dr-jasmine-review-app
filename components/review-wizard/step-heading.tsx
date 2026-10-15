@@ -3,8 +3,16 @@ import type { ReactElement } from "react";
 import { cn } from "@/lib/utils";
 
 type StepHeadingProps = {
-  /** 1-based step number shown in the accent numeral. */
-  number: number;
+  /**
+   * Optional 1-based step number shown in the accent label.
+   * Omit when the card heading should not show a wizard step numeral.
+   */
+  number?: number;
+  /**
+   * Text shown before the number (e.g. "Step " → "Step 1").
+   * Ignored when `number` is omitted.
+   */
+  numberPrefix?: string;
   /** Short section title (one job). */
   title: string;
   /** Optional hand-holding hint (right-aligned on wider screens). */
@@ -27,6 +35,7 @@ type StepHeadingProps = {
  */
 export function StepHeading({
   number,
+  numberPrefix = "",
   title,
   hint,
   description,
@@ -35,19 +44,22 @@ export function StepHeading({
   className,
 }: StepHeadingProps): ReactElement {
   const TitleTag = heading;
+  const showNumber = typeof number === "number";
 
   return (
     <div className={cn("mb-3.5", className)}>
       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-        <span
-          className={cn(
-            "font-heading font-bold leading-none text-[color:var(--brand-accent)] tabular-nums",
-            emphasize ? "text-[1.45rem]" : "text-[1.25rem]"
-          )}
-          aria-hidden="true"
-        >
-          {number}
-        </span>
+        {showNumber ? (
+          <span
+            className={cn(
+              "font-heading font-bold leading-none text-[color:var(--brand-accent)] tabular-nums",
+              emphasize ? "text-[1.45rem]" : "text-[1.25rem]"
+            )}
+            aria-hidden="true"
+          >
+            {[numberPrefix, String(number)].join("")}
+          </span>
+        ) : null}
         <TitleTag
           className={cn(
             "m-0 font-bold tracking-[-0.01em] text-[color:var(--brand-ink)]",
