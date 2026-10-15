@@ -5,6 +5,13 @@ export type StepId = "questions" | "results" | "draft" | "post";
 export type ReviewTone = "warm";
 
 /**
+ * How the model (or template) should shape the draft.
+ * - craft: write a warm coherent review from short/sparse notes (default).
+ * - light: polish grammar/flow only when the person already wrote a lot.
+ */
+export type ReviewEditMode = "craft" | "light";
+
+/**
  * Metric kinds users can pick as chips on the Results step.
  * Keep in sync with `METRIC_PRESETS` in `lib/metrics.ts`.
  */
@@ -56,6 +63,11 @@ export type GenerateReviewPayload = ExperienceFields & {
   tone: ReviewTone;
   /** Structured results / numbers the user provided. */
   results: ResultMetric[];
+  /**
+   * Optional client hint. Server re-derives from story length when omitted
+   * or when the hint disagrees with the substantial-text heuristic.
+   */
+  editMode?: ReviewEditMode;
 };
 
 /** Successful AI generation response. */

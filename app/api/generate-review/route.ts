@@ -1,7 +1,14 @@
 import { buildSystemPrompt, stripEmEnDashPunctuation } from "@/lib/brand";
 import { asResultList, asText, isObject } from "@/lib/api-utils";
 import { formatResultLines } from "@/lib/metrics";
-import type { GenerateReviewPayload } from "@/lib/types";
+import {
+  isReviewEditMode,
+  resolveReviewEditMode,
+} from "@/lib/review-mode";
+import type {
+  GenerateReviewPayload,
+  ReviewEditMode,
+} from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -9,9 +16,13 @@ const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 /**
  * Normalizes and validates the POST body for review generation.
+ * Optional `editMode` is accepted from the client; the server re-derives from
+ * story length so short answers never get light-touch by accident.
  */
 function normalizePayload(body: unknown): GenerateReviewPayload {
   const input = isObject(body) ? body : {};
+  const editModeRaw = input.editMode;
+  const editMode = isReviewEditMode(editModeRaw) ? editModeRaw : undefined;
 
   return {
     name: asText(input.name, 40),
@@ -20,13 +31,17 @@ function normalizePayload(body: unknown): GenerateReviewPayload {
     extra: asText(input.extra, 220),
     tone: "warm",
     results: asResultList(input.results),
+    editMode,
   };
 }
 
 /**
  * Builds the user message for the chat completion.
  */
-function buildUserPrompt(payload: GenerateReviewPayload): string {
+function buildUserPrompt(
+  payload: GenerateReviewPayload,
+  editMode: ReviewEditMode
+): string {
   const resultLines = formatResultLines(payload.results);
   const resultsBlock =
     resultLines.length > 0
@@ -36,10 +51,23 @@ function buildUserPrompt(payload: GenerateReviewPayload): string {
         ].join("\n")
       : "Results / numbers: none provided (do not invent any labs or metrics).";
 
+  const modeBlock =
+    editMode === "light"
+      ? [
+          "Task: LIGHT EDIT. Polish the notes below into one Google review.",
+          "Keep their voice and key phrases. Fix grammar and flow only. Do not rewrite from scratch.",
+        ].join("\n")
+      : [
+          "Task: NORMAL CRAFT. Write one authentic Google review from the notes below.",
+        ].join("\n");
+
   return [
-    "Write one authentic Google review for Dr Jasmine Chiew (Metanova Health).",
+    modeBlock,
+    "",
+    "Write the review for Dr Jasmine Chiew (Metanova Health).",
     "",
     `Tone: ${payload.tone}`,
+    `Edit mode: ${editMode}`,
     `Reviewer first name: ${payload.name || "not provided"}`,
     `Before the workshop / what they were dealing with: ${payload.struggle || "not provided"}`,
     `What changed for them: ${payload.change || "not provided"}`,
@@ -74,6 +102,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const payload = normalizePayload(body);
+  const editMode = resolveReviewEditMode(payload);
   const hasResults = payload.results.length > 0;
 
   if (
@@ -97,11 +126,11 @@ export async function POST(request: Request): Promise<Response> {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.8,
+        temperature: editMode === "light" ? 0.4 : 0.8,
         max_tokens: 320,
         messages: [
-          { role: "system", content: buildSystemPrompt() },
-          { role: "user", content: buildUserPrompt(payload) },
+          { role: "system", content: buildSystemPrompt(editMode) },
+          { role: "user", content: buildUserPrompt(payload, editMode) },
         ],
       }),
     });

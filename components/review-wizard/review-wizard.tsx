@@ -38,6 +38,7 @@ import {
 } from "@/lib/categories";
 import { copyText } from "@/lib/copy-text";
 import { isResultFilled } from "@/lib/metrics";
+import { resolveReviewEditMode } from "@/lib/review-mode";
 import { buildTemplateReview } from "@/lib/review-template";
 import { cn } from "@/lib/utils";
 import type {
@@ -160,15 +161,20 @@ export function ReviewWizard() {
 
   /**
    * Builds the OpenAI request payload (tone always warm).
+   * Includes editMode from the substantial-text heuristic (server re-checks).
    */
   const collectPayload = useCallback((): GenerateReviewPayload => {
-    return {
+    const story = {
       name: experience.name.trim(),
       struggle: experience.struggle.trim(),
       change: experience.change.trim(),
       extra: experience.extra.trim(),
+    };
+    return {
+      ...story,
       tone: "warm",
       results: results.filter(isResultFilled),
+      editMode: resolveReviewEditMode(story),
     };
   }, [experience, results]);
 
@@ -185,7 +191,9 @@ export function ReviewWizard() {
           change: payload.change,
           extra: payload.extra,
         },
-        payload.results
+        payload.results,
+        Date.now(),
+        payload.editMode ?? resolveReviewEditMode(payload)
       ).trim();
 
       if (review.length === 0) {
@@ -319,12 +327,9 @@ export function ReviewWizard() {
   }
 
   /**
-   * Copies the draft, then opens a post destination in a new tab.
+   * Copies the draft, then opens Google Reviews in a new tab.
    */
-  async function handleCopyAndOpenDestination(
-    url: string,
-    destinationLabel: "Google" | "Facebook"
-  ): Promise<void> {
+  async function handleCopyAndOpenGoogle(): Promise<void> {
     if (!hasRequiredExperience()) {
       toast.message("Complete your name and at least one answer first");
       goTo("questions");
@@ -337,11 +342,11 @@ export function ReviewWizard() {
     const ok = await copyText(text);
     toast.message(
       ok
-        ? `Copied. Opening ${destinationLabel}. Paste and submit`
-        : `Opening ${destinationLabel}. Copy the draft manually, then paste`
+        ? "Copied. Opening Google. Paste and submit"
+        : "Opening Google. Copy the draft manually, then paste"
     );
     window.setTimeout(() => {
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(BRAND.googleShareUrl, "_blank", "noopener,noreferrer");
     }, 350);
   }
 
@@ -572,7 +577,7 @@ export function ReviewWizard() {
           <StepHeading
             number={4}
             title="Ready to post"
-            description="Copy your review, open Google or Facebook, paste it, then submit."
+            description="Copy your review, open Google, paste it, then submit."
           />
 
           <div className="mb-3 max-h-[160px] overflow-y-auto rounded-[10px] border border-[color:var(--brand-line)] bg-[color:var(--brand-paper)] px-3.5 py-3 text-[0.95rem] leading-relaxed text-[color:var(--brand-ink-soft)]">
@@ -612,33 +617,13 @@ export function ReviewWizard() {
                 className="text-[1.05rem]"
                 disabled={!canPost}
                 onClick={() => {
-                  void handleCopyAndOpenDestination(
-                    BRAND.googleShareUrl,
-                    "Google"
-                  );
+                  void handleCopyAndOpenGoogle();
                 }}
               >
                 <GoogleMarkIcon data-icon="inline-start" />
                 Go to Google to post
                 <ExternalLink data-icon="inline-end" aria-hidden="true" />
               </WizardPrimaryButton>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                disabled={!canPost}
-                className="h-12 w-full border-[1.5px] text-[1.05rem]"
-                onClick={() => {
-                  void handleCopyAndOpenDestination(
-                    BRAND.facebookReviewsUrl,
-                    "Facebook"
-                  );
-                }}
-              >
-                <FacebookMarkIcon data-icon="inline-start" />
-                Go to Facebook to post
-                <ExternalLink data-icon="inline-end" aria-hidden="true" />
-              </Button>
             </div>
           </div>
 
@@ -734,26 +719,6 @@ function GoogleMarkIcon(props: BrandIconProps): ReactElement {
       <path
         fill="#EA4335"
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      />
-    </svg>
-  );
-}
-
-/**
- * Facebook "f" mark for the post destination button.
- */
-function FacebookMarkIcon(props: BrandIconProps): ReactElement {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="1.25em"
-      height="1.25em"
-      aria-hidden="true"
-      {...props}
-    >
-      <path
-        fill="#1877F2"
-        d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.668 4.533-4.668 1.312 0 2.686.234 2.686.234v2.953h-1.513c-1.49 0-1.955.925-1.955 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"
       />
     </svg>
   );

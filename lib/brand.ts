@@ -4,12 +4,13 @@
  * Keep this factual for the model. Do not invent clinical claims.
  */
 
+import type { ReviewEditMode } from "@/lib/types";
+
 export type BrandConfig = {
   practitionerName: string;
   clinicBrand: string;
   shortName: string;
   googleShareUrl: string;
-  facebookReviewsUrl: string;
   positioning: readonly string[];
   workshopTeaches: readonly string[];
   programNotes: readonly string[];
@@ -23,7 +24,6 @@ export const BRAND: BrandConfig = {
   shortName: "Dr Jasmine",
   /** Google Business "Get more reviews" deep link (g.page/r/.../review). */
   googleShareUrl: "https://g.page/r/CUUpUm99dRhkEBM/review",
-  facebookReviewsUrl: "https://www.facebook.com/drjasminechiew/reviews",
 
   positioning: [
     "Doctor-led metabolic and diabetes education / care brand under Metanova Health.",
@@ -81,9 +81,42 @@ export function stripEmEnDashPunctuation(text: string): string {
 }
 
 /**
- * Builds the system prompt for OpenAI review generation.
+ * Mode-specific drafting instructions appended to the system prompt.
  */
-export function buildSystemPrompt(): string {
+function buildEditModeInstructions(editMode: ReviewEditMode): string {
+  if (editMode === "light") {
+    return [
+      "Edit mode: LIGHT TOUCH (the reviewer already wrote a lot).",
+      "- Polish grammar, spelling, and flow only. Keep their voice, phrases, and numbers.",
+      "- Do NOT rewrite the whole review or replace their wording with brochure copy.",
+      "- Minimal rephrase: fix awkward spots, tighten for Google review length, preserve meaning.",
+      "- Keep first person. Prefer their sentence order when it already reads well.",
+      "- You may add a brief warm opener or closer only if the draft would otherwise feel incomplete.",
+      "- When Results / numbers are provided, keep those exact figures; do not invent others.",
+      "- Hard max 700 characters. Output ONLY the review text.",
+      "- Never use em dashes, en dashes, or spaced hyphen-minus as sentence punctuation.",
+    ].join("\n");
+  }
+
+  return [
+    "Edit mode: NORMAL CRAFT (short or sparse notes).",
+    "- Write a warm, coherent Google review from the notes they shared.",
+    "- Prefer natural Google-review voice: 2 to 5 sentences, or a short opening plus a few concrete result lines if they shared numbers.",
+    "- Aim for 70 to 180 words. Hard max 700 characters.",
+    "- Match the requested tone: warm.",
+    "- When the user shared Results / numbers, weave those exact figures in clearly (before to after). Do not bury or omit them.",
+    "- Do not write a long testimonial-card essay. Keep it postable as a Google review.",
+    "- Weave in the personal details the user shared (before, what changed, what stood out) naturally when present.",
+    "- If first name is provided, you may end with a simple sign-off using only the first name (no leading dash).",
+    "- Never use em dashes, en dashes, or spaced hyphen-minus as sentence punctuation.",
+  ].join("\n");
+}
+
+/**
+ * Builds the system prompt for OpenAI review generation.
+ * @param editMode - craft for short notes; light when answers are already substantial.
+ */
+export function buildSystemPrompt(editMode: ReviewEditMode = "craft"): string {
   return [
     "You write short, authentic Google reviews for a real patient or workshop attendee.",
     "",
@@ -107,13 +140,6 @@ export function buildSystemPrompt(): string {
     "",
     "Output rules:",
     "- Output ONLY the review text. No title, quotes, or commentary.",
-    "- Prefer natural Google-review voice: 2 to 5 sentences, or a short opening plus a few concrete result lines if the user shared numbers.",
-    "- Aim for 70 to 180 words. Hard max 700 characters.",
-    "- Match the requested tone: casual, warm, or clear.",
-    "- When the user shared Results / numbers, weave those exact figures in clearly (before to after). Do not bury or omit them.",
-    "- Do not write a long testimonial-card essay. Keep it postable as a Google review.",
-    "- Weave in the personal details the user shared (before, what changed, what stood out) naturally when present.",
-    "- If first name is provided, you may end with a simple sign-off using only the first name (no leading dash).",
-    "- Never use em dashes, en dashes, or spaced hyphen-minus as sentence punctuation.",
+    buildEditModeInstructions(editMode),
   ].join("\n");
 }
