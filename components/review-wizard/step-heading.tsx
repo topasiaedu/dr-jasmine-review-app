@@ -11,6 +11,13 @@ type StepHeadingProps = {
   hint?: string;
   /** Supporting sentence under the title row. */
   description?: string;
+  /**
+   * Heading level for the title. Use h3 for nested action steps inside a panel.
+   * Defaults to h2.
+   */
+  heading?: "h2" | "h3";
+  /** Slightly larger numeral + title for elderly-friendly nested steps. */
+  emphasize?: boolean;
   className?: string;
 };
 
@@ -23,20 +30,32 @@ export function StepHeading({
   title,
   hint,
   description,
+  heading = "h2",
+  emphasize = false,
   className,
 }: StepHeadingProps): ReactElement {
+  const TitleTag = heading;
+
   return (
     <div className={cn("mb-3.5", className)}>
       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
         <span
-          className="font-heading text-[1.25rem] font-bold leading-none text-[color:var(--brand-accent)] tabular-nums"
+          className={cn(
+            "font-heading font-bold leading-none text-[color:var(--brand-accent)] tabular-nums",
+            emphasize ? "text-[1.45rem]" : "text-[1.25rem]"
+          )}
           aria-hidden="true"
         >
           {number}
         </span>
-        <h2 className="m-0 text-[1.12rem] font-bold tracking-[-0.01em] text-[color:var(--brand-ink)]">
+        <TitleTag
+          className={cn(
+            "m-0 font-bold tracking-[-0.01em] text-[color:var(--brand-ink)]",
+            emphasize ? "text-[1.2rem]" : "text-[1.12rem]"
+          )}
+        >
           {title}
-        </h2>
+        </TitleTag>
         {hint ? (
           <span className="w-full text-[0.82rem] text-[color:var(--brand-muted)] sm:ml-auto sm:w-auto">
             {hint}

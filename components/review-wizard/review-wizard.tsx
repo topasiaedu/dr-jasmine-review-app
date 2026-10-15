@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import {
   useCallback,
+  useEffect,
   useState,
   type ReactElement,
   type SVGProps,
@@ -91,6 +92,9 @@ export function ReviewWizard() {
   const [invalidFields, setInvalidFields] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [draft, setDraft] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  /** True after a successful clipboard write for the current draft. */
+  const [hasCopied, setHasCopied] = useState(false);
+  /** Brief label flash on the Copy control after success. */
   const [copiedFlash, setCopiedFlash] = useState(false);
   const [questionsStatus, setQuestionsStatus] = useState({
     message: "",
@@ -104,6 +108,14 @@ export function ReviewWizard() {
     message: "",
     kind: "" as StatusKind,
   });
+
+  /**
+   * If the draft changes after a copy, require a fresh copy before Google unlocks.
+   */
+  useEffect(() => {
+    setHasCopied(false);
+    setCopiedFlash(false);
+  }, [draft]);
 
   /**
    * Scrolls to top and updates the active step.
@@ -303,7 +315,7 @@ export function ReviewWizard() {
   }
 
   /**
-   * Copies draft text and briefly flashes the copy control.
+   * Copies draft text, unlocks Google on success, and briefly flashes the control.
    */
   async function handleCopyOnly(): Promise<void> {
     if (!hasRequiredExperience()) {
@@ -318,18 +330,24 @@ export function ReviewWizard() {
     }
     const ok = await copyText(text);
     if (ok) {
+      setHasCopied(true);
       setCopiedFlash(true);
       window.setTimeout(() => setCopiedFlash(false), 1600);
+      toast.message("Copied. Ready to paste");
+      return;
     }
-    toast.message(
-      ok ? "Copied. Ready to paste" : "Could not copy. Select the text manually"
-    );
+    setHasCopied(false);
+    toast.message("Could not copy. Select the text manually");
   }
 
   /**
-   * Copies the draft, then opens Google Reviews in a new tab.
+   * Opens Google Reviews after a successful copy. Refreshes the clipboard first.
    */
-  async function handleCopyAndOpenGoogle(): Promise<void> {
+  async function handleOpenGoogle(): Promise<void> {
+    if (!hasCopied) {
+      toast.message("Copy your review first");
+      return;
+    }
     if (!hasRequiredExperience()) {
       toast.message("Complete your name and at least one answer first");
       goTo("questions");
@@ -339,15 +357,8 @@ export function ReviewWizard() {
     if (text.length < DRAFT_MIN_LENGTH) {
       return;
     }
-    const ok = await copyText(text);
-    toast.message(
-      ok
-        ? "Copied. Opening Google. Paste and submit"
-        : "Opening Google. Copy the draft manually, then paste"
-    );
-    window.setTimeout(() => {
-      window.open(BRAND.googleShareUrl, "_blank", "noopener,noreferrer");
-    }, 350);
+    await copyText(text);
+    window.open(BRAND.googleShareUrl, "_blank", "noopener,noreferrer");
   }
 
   const canContinueQuestions = hasRequiredExperience();
@@ -355,6 +366,7 @@ export function ReviewWizard() {
   const canContinueDraft = draftMeetsMinLength && hasRequiredExperience();
   const canGenerateAi = !aiBusy;
   const canPost = draftMeetsMinLength && hasRequiredExperience();
+  const canOpenGoogle = canPost && hasCopied;
 
   return (
     <div className="mx-auto w-full max-w-[560px]">
@@ -577,56 +589,89 @@ export function ReviewWizard() {
           <StepHeading
             number={4}
             title="Ready to post"
-            description="Copy your review, open Google, paste it, then submit."
+            description="Two quick steps. Copy first, then open Google to paste and submit."
           />
 
-          <div className="mb-3 max-h-[160px] overflow-y-auto rounded-[10px] border border-[color:var(--brand-line)] bg-[color:var(--brand-paper)] px-3.5 py-3 text-[0.95rem] leading-relaxed text-[color:var(--brand-ink-soft)]">
+          <div className="mb-5 max-h-[160px] overflow-y-auto rounded-[10px] border border-[color:var(--brand-line)] bg-[color:var(--brand-paper)] px-3.5 py-3 text-[0.95rem] leading-relaxed text-[color:var(--brand-ink-soft)]">
             {draft.trim() || "Your draft will show here."}
           </div>
 
-          <div className="flex flex-col gap-2.5 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="h-11 flex-1 border-[1.5px]"
-              onClick={() => {
-                void handleCopyOnly();
-              }}
-            >
-              {copiedFlash ? (
-                <>
-                  <Check data-icon="inline-start" aria-hidden="true" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy data-icon="inline-start" aria-hidden="true" />
-                  Copy text
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="mt-4 rounded-[10px] bg-[color:var(--brand-accent-soft)] px-3.5 py-3.5">
-            <h3 className="font-heading m-0 text-[1.05rem] font-bold tracking-[-0.01em] text-[color:var(--brand-accent-deep)]">
-              Last step
-            </h3>
-            <div className="mt-3 flex flex-col gap-2.5">
-              <WizardPrimaryButton
-                className="text-[1.05rem]"
+          <section className="mb-6" aria-label="Step 1 Copy text">
+            <StepHeading
+              number={1}
+              title="Copy text"
+              heading="h3"
+              emphasize
+              description="Tap the green button so your review is ready to paste."
+              className="mb-3"
+            />
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                size="lg"
                 disabled={!canPost}
+                className={cn(
+                  "h-14 w-full text-[1.15rem] font-semibold shadow-[0_2px_8px_rgba(31,107,79,0.28)]",
+                  "disabled:bg-[color:var(--brand-line)] disabled:text-[color:var(--brand-muted)]",
+                  "disabled:opacity-100 disabled:shadow-none"
+                )}
                 onClick={() => {
-                  void handleCopyAndOpenGoogle();
+                  void handleCopyOnly();
                 }}
               >
-                <GoogleMarkIcon data-icon="inline-start" />
-                Go to Google to post
-                <ExternalLink data-icon="inline-end" aria-hidden="true" />
-              </WizardPrimaryButton>
+                {copiedFlash || hasCopied ? (
+                  <>
+                    <Check
+                      data-icon="inline-start"
+                      aria-hidden="true"
+                      className="size-5"
+                    />
+                    {copiedFlash ? "Copied" : "Copy text again"}
+                  </>
+                ) : (
+                  <>
+                    <Copy
+                      data-icon="inline-start"
+                      aria-hidden="true"
+                      className="size-5"
+                    />
+                    Copy text
+                  </>
+                )}
+              </Button>
+              {hasCopied && !copiedFlash ? (
+                <p className="m-0 text-center text-[0.9rem] font-medium text-[color:var(--brand-accent-deep)]">
+                  Copied. Continue to step 2.
+                </p>
+              ) : null}
             </div>
-          </div>
+          </section>
 
+          <section aria-label="Step 2 Go to Google">
+            <StepHeading
+              number={2}
+              title="Go to Google to post"
+              heading="h3"
+              emphasize
+              description={
+                hasCopied
+                  ? "Paste your review, then submit."
+                  : "This unlocks after you copy."
+              }
+              className="mb-3"
+            />
+            <WizardPrimaryButton
+              className="h-12 text-[1.05rem]"
+              disabled={!canOpenGoogle}
+              onClick={() => {
+                void handleOpenGoogle();
+              }}
+            >
+              <GoogleMarkIcon data-icon="inline-start" />
+              Go to Google to post
+              <ExternalLink data-icon="inline-end" aria-hidden="true" />
+            </WizardPrimaryButton>
+          </section>
         </StepPanel>
       ) : null}
 
